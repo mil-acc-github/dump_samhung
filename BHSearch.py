@@ -1,6 +1,5 @@
 from utilfuncs import Byte4ToInt, Byte2ToInt, IntToByte4, wmemcpyUni, AryByte2ToInt
 import re
-from tqdm import tqdm
 import os
 import sqlite3
 
@@ -332,9 +331,9 @@ class DicDumper:
         dictionary = []
         # we need to handle monolingual dictionaries like the Korean one (KK)
         for prefix in self.prefixes:
-            tqdm.write("> Dumping %s dictionary" % prefix)
+            print("> Dumping %s dictionary" % prefix)
             self.g_shSearch.OpenDB(prefix + INDEX_SUFFIX, prefix + SHA_SUFFIX)
-            for i in tqdm(range(self.g_shSearch.iKeyNumber)):
+            for i in range(self.g_shSearch.iKeyNumber):
                 full_data = self.g_shSearch.GetKeyFromIndex(i)
                 key, data = MakeDrawData(full_data)
                 key = convert_array(key)
@@ -350,6 +349,6 @@ class DicDumper:
 
 if __name__ == "__main__":
     for lang in ["EK", "KK", "JK", "FK", "RK", "CK", "DK"]:
-        print("Dumping %s", lang)
+        print("Dumping %s" % lang)
         dd = DicDumper(lang)
         dd.dump()
