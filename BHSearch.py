@@ -350,6 +350,6 @@ class DicDumper:
 
 if __name__ == "__main__":
     for lang in ["EK", "KK", "JK", "FK", "RK", "CK", "DK"]:
-        print("Dumping %s", lang)
+        print("Dumping %s" % lang)
         dd = DicDumper(lang)
         dd.dump()
