@@ -28,7 +28,7 @@ DB_SUFFIX = ".db"
 KCGFont_minus_sign = 45
 SH_DIC_SERIAL = 20090923
 
-DEBUG = 3
+DEBUG = 4
 
 def debug(*a, end="\n", level=0):
     if level >= DEBUG:
@@ -66,9 +66,17 @@ class BHSearch:
         secubytes[0] = 0
         IntToByte4(nValue, secubytes, 1)
 
+        debug(f"\nOnDBSecurity > secubytes > {secubytes}", level=7)
+        debug(f"OnDBSecurity > BHSearch.m_bSecurityType > {self.m_bSecurityType}", level=7)
+
         if self.m_bSecurityType:
             i = 0
+
+            debug(f"\n  lpInput > INIT > {lpInput}\n", level=7)
+
             while i < nLen:
+
+                debug(f"    lpInput > BEF > {lpInput}", level=4)
 
                 lpInput[i] = lpInput[i] ^ secubytes[1]
                 i2 = i + 1
@@ -87,9 +95,13 @@ class BHSearch:
 
                 lpInput[i4] = lpInput[i4] ^ secubytes[4]
                 i = i4 + 1
-        
+
+                debug(f"    lpInput > AFT > {lpInput}", level=4)
+
+            debug(f"\n  lpInput > DONE > {lpInput}", level=7)
+
         wmemcpyUni(lpInput, nLen, lpOut)
-        
+        debug(f"\nwmemcpyUni > (lpInput, nLen, lpOut) > ({lpInput}, {nLen}, {lpOut})", level=7)
 
     def OpenDB(self, strDBFile1, strDBFile2):
 
@@ -104,25 +116,37 @@ class BHSearch:
 
             smhgstr = bytearray(300)
             Temp = self.DfrFile.read(40)
+            debug(f"\nDfrFile > READ (40) > ``` {Temp} ```", level=7)
+            debug(f"DfrFile > (decoded) > ``` {Temp.decode()} ```", level=7)
+
             if Temp.decode() != BH_HEAD_INFO:
                 self.PosFile.close()
                 self.DfrFile.close()
                 return False
 
             Temp = self.DfrFile.read(3)
-            if Temp[0] != 44:
+            debug(f"\nDfrFile > READ (3) > ``` {Temp} ```", level=7)
+            debug(f"DfrFile > Temp[0] > ``` {Temp[0]} ```", level=7)
+            debug(f"DfrFile > Temp[1] > ``` {Temp[1]} ```", level=7)
+
+            if Temp[0] != BH_HEADERLEN: # 44
                 self.PosFile.close()
                 self.DfrFile.close()
                 return False
-            
+
             self.iHeaderLen = Temp[1]
+            debug(f"OpenDB  > BHSearch.iHeaderLen > ``` {self.iHeaderLen} ```", level=7)
+
             if self.iHeaderLen > 300:
                 self.PosFile.close()
                 self.DfrFile.close()
                 return False
 
             Temp = bytearray(self.DfrFile.read(self.iHeaderLen))
+            debug(f"\nDfrFile > READ (BHSearch.iHeaderLen={self.iHeaderLen}) > ``` {Temp} ```", level=7)
+
             self.OnDBSecurity(Temp, smhgstr, SH_DIC_SERIAL, self.iHeaderLen - 43)
+
             uc = smhgstr[0]
             iPos2 = 1
             while uc != 56:
@@ -244,6 +268,7 @@ class BHSearch:
 
 
 def MakeDrawData(pbyBuf):
+    debug(f"\nMakeDrawData > FROM > {pbyBuf}", level=3)
     res = []
     key = []
     m_nBufLen = len(pbyBuf)
@@ -281,22 +306,26 @@ def MakeDrawData(pbyBuf):
         else:
             i += 1
             nDataNum += 1
+    debug(f"MakeDrawData > INTO > {key} : {res}", level=3)
     return key, res
 
 
 def MakeWord(a, b):
     word = chr(((b & 0xFF) << 8) | (a & 0xFF))
-    debug(f"MakeWord : ({a}, {b}) -> {word}", level=1)
+    debug(f"\nMakeWord > FROM > ({a}, {b})", level=1)
+    debug(f"MakeWord > INTO > {word}", level=1)
     return word
 
 
 def convert_array(input_array):
+    debug(f"\nconvert_array > FROM > {input_array}", level=3)
     res = ''
     for element in input_array:
         i = 0
         while i < len(element):
             res += MakeWord(element[i], element[i+1])
             i += 2
+    debug(f"convert_array > INTO > {res}", level=3)
     return res
 
 
@@ -355,14 +384,14 @@ class DicDumper:
                 dictionary.append((key, data))
 
                 if not (i % batch):
-                    print(f"  - Progress = {100*i/total:.0f} %", end="\r")
-            print("  - Progress = 100 %")
+                    debug(f"  - Progress = {100*i/total:.0f} %", end="\r", level=9)
+            debug("  - Progress = 100 %", level=9)
 
         self._create_db_title()
         self._create_db_dict(dictionary)
 
 if __name__ == "__main__":
-    for lang in ["EK", "KK", "JK", "FK", "RK", "CK", "DK"]:
+    for lang in ["KK"]:
         print("Dumping %s" % lang)
         dd = DicDumper(lang)
         dd.dump()

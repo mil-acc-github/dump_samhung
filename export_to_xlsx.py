@@ -1,3 +1,11 @@
+# REQUIRE OPENPYXL DEP
+try:
+    import openpyxl
+except ModuleNotFoundError:
+    import sys
+    print("\n  Err: Export to EXCEL requires `openpyxl` library")
+    sys.exit(1)
+
 import sqlite3
 import pandas as pd
 from glob import iglob
@@ -5,7 +13,7 @@ from os import path, makedirs
 from pathlib import Path
 
 OUT_PREFIX = "output/"
-OUT_SUFFIX = ".csv"
+OUT_SUFFIX = ".xlsx"
 
 
 makedirs(OUT_PREFIX, exist_ok=True)
@@ -17,9 +25,9 @@ for dbname in iglob( str(Path.cwd()/"*db") ):
     # Check if exported DB CSV exists
     print(f"DB > {dbname}")
     if path.isfile(outpath):
-        print(f"  - {dbname} csv exists, next")
+        print(f"  - {dbname} xlsx exists, next")
         continue
-    print(f"  - {dbname} csv NOT exists, export")
+    print(f"  - {dbname} xlsx NOT exists, export")
 
     try:
         # Load Database
@@ -32,7 +40,7 @@ for dbname in iglob( str(Path.cwd()/"*db") ):
         # Read TABLE `dictionary` and export
         tablename = "dictionary" # input("- TABLE NAME\n> ")
         df = pd.read_sql_query(f"SELECT * FROM {tablename}", conn)
-        df.to_csv(outpath, index=False)
+        df.to_excel(outpath, index=False)
 
     except sqlite3.Error as error:
         print("    - ERROR :", error)
