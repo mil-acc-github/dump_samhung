@@ -1,18 +1,10 @@
-# REQUIRE OPENPYXL DEP
-try:
-    import openpyxl
-except ModuleNotFoundError:
-    import sys
-    print("\n  Err: Export to EXCEL requires `openpyxl` library")
-    sys.exit(1)
-
 import sqlite3
 import pandas as pd
 from glob import iglob
 from os import path, makedirs
 from pathlib import Path
 
-OUT_PREFIX = "output/"
+OUT_PREFIX = "xlsx/"
 OUT_SUFFIX = ".xlsx"
 
 

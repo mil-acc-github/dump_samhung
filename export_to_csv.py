@@ -4,7 +4,7 @@ from glob import iglob
 from os import path, makedirs
 from pathlib import Path
 
-OUT_PREFIX = "output/"
+OUT_PREFIX = "csv/"
 OUT_SUFFIX = ".csv"
 
 
