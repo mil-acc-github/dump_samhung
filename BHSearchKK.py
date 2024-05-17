@@ -21,17 +21,19 @@ BH_KEYNUMBER = 47
 BH_KEYPOSLEN = 55
 BH_KEYPOSSTART = 54
 BH_TRIE_SEARCH = 0
-INDEX_SUFFIX = "Dic.idx"
-SHA_SUFFIX = "Dic.sha"
+INDEX_SUFFIX = ".idx"
+SHA_SUFFIX = ".sha"
 DB_SUFFIX = ".db"
+
+DB_DIR = "db/"
 
 KCGFont_minus_sign = 45
 SH_DIC_SERIAL = 20090923
 
-DEBUG = 4
+DEBUG = False
 
-def debug(*a, end="\n", level=0):
-    if level >= DEBUG:
+def debug(*a, end="\n", _f=True):
+    if _f or DEBUG:
         print(*a, end=end)
 
 
@@ -66,17 +68,17 @@ class BHSearch:
         secubytes[0] = 0
         IntToByte4(nValue, secubytes, 1)
 
-        debug(f"\nOnDBSecurity > secubytes > {secubytes}", level=7)
-        debug(f"OnDBSecurity > BHSearch.m_bSecurityType > {self.m_bSecurityType}", level=7)
+        debug(f"\nBHSearch > OnDBSecurity > secubytes > {secubytes}", _f=1)
+        debug(f"BHSearch > OnDBSecurity > BHSearch.m_bSecurityType > {self.m_bSecurityType}", _f=1)
 
         if self.m_bSecurityType:
             i = 0
 
-            debug(f"\n  lpInput > INIT > {lpInput}\n", level=7)
+            debug(f"\n  lpInput > INIT > {lpInput}\n", _f=1)
 
             while i < nLen:
 
-                debug(f"    lpInput > BEF > {lpInput}", level=4)
+                debug(f"    lpInput > BEF > {lpInput}", _f=0)
 
                 lpInput[i] = lpInput[i] ^ secubytes[1]
                 i2 = i + 1
@@ -96,12 +98,12 @@ class BHSearch:
                 lpInput[i4] = lpInput[i4] ^ secubytes[4]
                 i = i4 + 1
 
-                debug(f"    lpInput > AFT > {lpInput}", level=4)
+                debug(f"    lpInput > AFT > {lpInput}", _f=0)
 
-            debug(f"\n  lpInput > DONE > {lpInput}", level=7)
+            debug(f"\n  lpInput > DONE > {lpInput}", _f=1)
 
         wmemcpyUni(lpInput, nLen, lpOut)
-        debug(f"\nwmemcpyUni > (lpInput, nLen, lpOut) > ({lpInput}, {nLen}, {lpOut})", level=7)
+        debug(f"\nwmemcpyUni > (lpInput, nLen, lpOut) > ({lpInput}, {nLen}, {lpOut})", _f=1)
 
     def OpenDB(self, strDBFile1, strDBFile2):
 
@@ -116,8 +118,8 @@ class BHSearch:
 
             smhgstr = bytearray(300)
             Temp = self.DfrFile.read(40)
-            debug(f"\nDfrFile > READ (40) > ``` {Temp} ```", level=7)
-            debug(f"DfrFile > (decoded) > ``` {Temp.decode()} ```", level=7)
+            debug(f"\nBHSearch > DfrFile > READ (40) > ``` {Temp} ```", _f=1)
+            debug(f"BHSearch > DfrFile > (decoded) > ``` {Temp.decode()} ```", _f=1)
 
             if Temp.decode() != BH_HEAD_INFO:
                 self.PosFile.close()
@@ -125,9 +127,9 @@ class BHSearch:
                 return False
 
             Temp = self.DfrFile.read(3)
-            debug(f"\nDfrFile > READ (3) > ``` {Temp} ```", level=7)
-            debug(f"DfrFile > Temp[0] > ``` {Temp[0]} ```", level=7)
-            debug(f"DfrFile > Temp[1] > ``` {Temp[1]} ```", level=7)
+            debug(f"\nBHSearch > DfrFile > READ (3) > ``` {Temp} ```", _f=1)
+            debug(f"BHSearch > DfrFile > Temp[0] > ``` {Temp[0]} ```", _f=1)
+            debug(f"BHSearch > DfrFile > Temp[1] > ``` {Temp[1]} ```", _f=1)
 
             if Temp[0] != BH_HEADERLEN: # 44
                 self.PosFile.close()
@@ -135,7 +137,7 @@ class BHSearch:
                 return False
 
             self.iHeaderLen = Temp[1]
-            debug(f"OpenDB  > BHSearch.iHeaderLen > ``` {self.iHeaderLen} ```", level=7)
+            debug(f"BHSearch > OpenDB  > BHSearch.iHeaderLen > ``` {self.iHeaderLen} ```", _f=1)
 
             if self.iHeaderLen > 300:
                 self.PosFile.close()
@@ -143,26 +145,37 @@ class BHSearch:
                 return False
 
             Temp = bytearray(self.DfrFile.read(self.iHeaderLen))
-            debug(f"\nDfrFile > READ (BHSearch.iHeaderLen={self.iHeaderLen}) > ``` {Temp} ```", level=7)
+            debug(f"\nBHSearch > DfrFile > READ (BHSearch.iHeaderLen={self.iHeaderLen}) > ``` {Temp} ```", _f=1)
 
             self.OnDBSecurity(Temp, smhgstr, SH_DIC_SERIAL, self.iHeaderLen - 43)
 
+            debug(f"\nBHSearch > OpenDB > smhgstr > ``` {smhgstr} ```", _f=1)
             uc = smhgstr[0]
+            debug(f"\nBHSearch > OpenDB > smhgstr[0] (uc) > ``` {uc} ```", _f=1)
+
             iPos2 = 1
             while uc != 56:
+                debug(f"\n  BHSearch > OpenDB > iPos2 > ``` {iPos2} ```", _f=1)
+                debug(f"  BHSearch > OpenDB > uc > ``` {uc} ```", _f=1)
+
                 if uc == KCGFont_minus_sign:
+                    debug("  BHSearch > OpenDB > uc > 45(KCGFont_minus_sign)", _f=1)
                     self.byDfrFileType = smhgstr[iPos2]
                     iPos = iPos2 + 1
-                elif uc == 46:
+                elif uc == BH_ENCODECHAR: # 46
+                    debug("  BHSearch > OpenDB > uc > 46(BH_ENCODECHAR)", _f=1)
                     self.bySW = smhgstr[iPos2]
                     iPos = iPos2 + 1
-                elif uc == 47:
+                elif uc == BH_KEYNUMBER: # 47
+                    debug("  BHSearch > OpenDB > uc > 47(BH_KEYNUMBER)", _f=1)
                     self.iKeyNumber = Byte4ToInt(smhgstr, iPos2)
                     iPos = iPos2 + 4
-                elif uc == 48:
+                elif uc == BH_DATAMAXSIZE: # 48:
+                    debug("  BHSearch > OpenDB > uc > 48(BH_DATAMAXSIZE)", _f=1)
                     self.iMaxDataSize = Byte4ToInt(smhgstr, iPos2)
                     iPos = iPos2 + 4
-                elif uc == 49:
+                elif uc == BH_BHASHINFO: # 49:
+                    debug("  BHSearch > OpenDB > uc > 49(BH_BHASHINFO)", _f=1)
                     self.byPBectorLen = smhgstr[iPos2]
                     iPos3 = iPos2 + 1
                     for i in range(self.byPBectorLen):
@@ -170,28 +183,37 @@ class BHSearch:
                         self.bpPBectorR[i] = smhgstr[(i * 2) + iPos3 + 1]
                         iPos = iPos3 + 32
                 elif uc == 50:
+                    debug("  BHSearch > OpenDB > uc > 50(_)", _f=1)
                     self.iIndexStart = Byte4ToInt(smhgstr, iPos2)
                     iPos = iPos2 + 4
                 elif uc == 51:
+                    debug("  BHSearch > OpenDB > uc > 51(_)", _f=1)
                     self.iIndexLen = Byte4ToInt(smhgstr, iPos2)
                     iPos = iPos2 + 4
                 elif uc == 52:
+                    debug("  BHSearch > OpenDB > uc > 52(_)", _f=1)
                     self.iDataStart = Byte4ToInt(smhgstr, iPos2)
                     iPos = iPos2 + 4
                 elif uc == 53:
+                    debug("  BHSearch > OpenDB > uc > 53(_)", _f=1)
                     self.iDataLen = Byte4ToInt(smhgstr, iPos2)
                     iPos = iPos2 + 4
                 else:
+                    debug("  BHSearch > OpenDB > uc > (None)", _f=1)
                     self.PosFile.close()
                     self.DfrFile.close()
                     return False
-                
+
+                debug(f"  BHSearch > OpenDB > iPos > ``` {iPos} ```", _f=1)
+                debug(f"  BHSearch > OpenDB > smhgstr > ``` {smhgstr} ```", _f=0)
                 uc = smhgstr[iPos]
                 iPos2 = iPos + 1
-        
+
+            debug(f"\nBHSearch > OpenDB > uc={uc} > 56(<LOOPOUT>)", _f=1)
+            debug(f"BHSearch > iKeyPoint > ``` {self.iDataStart} ```", _f=1)
             self.iKeyPoint = self.iDataStart
             return True
-        
+
         except IOError as e:
             print(e)
 
@@ -268,7 +290,7 @@ class BHSearch:
 
 
 def MakeDrawData(pbyBuf):
-    debug(f"\nMakeDrawData > FROM > {pbyBuf}", level=3)
+    debug(f"\nMakeDrawData > FROM > {pbyBuf}", _f=0)
     res = []
     key = []
     m_nBufLen = len(pbyBuf)
@@ -306,47 +328,47 @@ def MakeDrawData(pbyBuf):
         else:
             i += 1
             nDataNum += 1
-    debug(f"MakeDrawData > INTO > {key} : {res}", level=3)
+    debug(f"MakeDrawData > INTO > {key} : {res}", _f=0)
     return key, res
 
 
 def MakeWord(a, b):
     word = chr(((b & 0xFF) << 8) | (a & 0xFF))
-    debug(f"\nMakeWord > FROM > ({a}, {b})", level=1)
-    debug(f"MakeWord > INTO > {word}", level=1)
+    debug(f"\nMakeWord > FROM > ({a}, {b})", _f=0)
+    debug(f"MakeWord > INTO > {word}", _f=0)
     return word
 
 
 def convert_array(input_array):
-    debug(f"\nconvert_array > FROM > {input_array}", level=3)
+    debug(f"\nconvert_array > FROM > {input_array}", _f=0)
     res = ''
     for element in input_array:
         i = 0
         while i < len(element):
             res += MakeWord(element[i], element[i+1])
             i += 2
-    debug(f"convert_array > INTO > {res}", level=3)
+    debug(f"convert_array > INTO > {res}", _f=0)
     return res
 
 
 class DicDumper:
 
     def __init__(self, prefix, dicname=None):
-        if len(prefix) != 2:
-            raise ValueError("Invalid length")
+        #if len(prefix) != 2:
+         #   raise ValueError("Invalid length")
         if dicname is None:
             self.dicname = prefix + " Dictionary"
         self.prefix = prefix
         self.g_shSearch = BHSearch()
         self.g_shSearch.m_bSecurityType = True
-        self.prefixes = list(set([self.prefix, self.prefix[::-1]]))
+        self.prefixes = [ prefix, ] # list(set([self.prefix, self.prefix[::-1]]))
         self.prefixes.sort(reverse=True)
         self.dbname = ''.join(self.prefixes) + DB_SUFFIX
-        if os.path.exists(self.dbname):
+        if os.path.exists(DB_DIR + self.dbname):
             print("> Removing the existing %s database file" % self.dbname)
-            os.remove(self.dbname)
-
-        self.conn = sqlite3.connect(self.dbname)
+            os.remove(DB_DIR + self.dbname)
+        os.makedirs(DB_DIR, exist_ok=True)
+        self.conn = sqlite3.connect(DB_DIR + self.dbname)
 
     def _create_db_title(self):
         print("> Creating database")
@@ -384,14 +406,14 @@ class DicDumper:
                 dictionary.append((key, data))
 
                 if not (i % batch):
-                    debug(f"  - Progress = {100*i/total:.0f} %", end="\r", level=9)
-            debug("  - Progress = 100 %", level=9)
+                    debug(f"  - Progress = {100*i/total:.0f} %", end="\r", _f=1)
+            debug("  - Progress = 100 %", _f=1)
 
         self._create_db_title()
         self._create_db_dict(dictionary)
 
 if __name__ == "__main__":
-    for lang in ["KK"]:
+    for lang in ["KKDic", ]:
         print("Dumping %s" % lang)
         dd = DicDumper(lang)
         dd.dump()
