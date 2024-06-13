@@ -1,30 +1,24 @@
 import sqlite3
 import pandas as pd
 from glob import iglob
-from os import path, makedirs
+from os import path
 from pathlib import Path
 
-OUT_PREFIX = "csv/"
-OUT_SUFFIX = ".csv"
-
-
-makedirs(OUT_PREFIX, exist_ok=True)
-
+print(f"{str(Path.cwd()/'*db')}")
 for dbname in iglob( str(Path.cwd()/"*db") ):
     dbname = dbname.split("\\")[-1]
-    outpath = OUT_PREFIX + dbname + OUT_SUFFIX
 
     # Check if exported DB CSV exists
     print(f"DB > {dbname}")
-    if path.isfile(outpath):
-        print(f"  - {dbname} csv exists, next")
+    if path.isfile(f"{dbname}.csv"):
+        print(f"  - {dbname}.csv exists, next")
         continue
-    print(f"  - {dbname} csv NOT exists, export")
+    print(f"  - {dbname}.csv NOT exists, export")
 
     try:
         # Load Database
         conn = sqlite3.connect(
-            dbname, 
+            f"{dbname}", 
             isolation_level=None, 
             detect_types=sqlite3.PARSE_COLNAMES
         )
@@ -32,7 +26,7 @@ for dbname in iglob( str(Path.cwd()/"*db") ):
         # Read TABLE `dictionary` and export
         tablename = "dictionary" # input("- TABLE NAME\n> ")
         df = pd.read_sql_query(f"SELECT * FROM {tablename}", conn)
-        df.to_csv(outpath, index=False)
+        df.to_csv(f"exported/{dbname}.csv", index=False, encoding="utf-8-sig")
 
     except sqlite3.Error as error:
-        print("    - ERROR :", error)
+        print("    [ ERR ]", error)

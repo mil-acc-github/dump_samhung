@@ -1,30 +1,24 @@
 import sqlite3
 import pandas as pd
 from glob import iglob
-from os import path, makedirs
+from os import path
 from pathlib import Path
 
-OUT_PREFIX = "xlsx/"
-OUT_SUFFIX = ".xlsx"
-
-
-makedirs(OUT_PREFIX, exist_ok=True)
-
+print(f"{str(Path.cwd()/'*db')}")
 for dbname in iglob( str(Path.cwd()/"*db") ):
     dbname = dbname.split("\\")[-1]
-    outpath = OUT_PREFIX + dbname + OUT_SUFFIX
 
-    # Check if exported DB CSV exists
+    # Check if exported DB xlsx exists
     print(f"DB > {dbname}")
-    if path.isfile(outpath):
-        print(f"  - {dbname} xlsx exists, next")
+    if path.isfile(f"{dbname}.xlsx"):
+        print(f"  - {dbname}.xlsx exists, next")
         continue
-    print(f"  - {dbname} xlsx NOT exists, export")
+    print(f"  - {dbname}.xlsx NOT exists, export")
 
     try:
         # Load Database
         conn = sqlite3.connect(
-            dbname, 
+            f"{dbname}", 
             isolation_level=None, 
             detect_types=sqlite3.PARSE_COLNAMES
         )
@@ -32,7 +26,7 @@ for dbname in iglob( str(Path.cwd()/"*db") ):
         # Read TABLE `dictionary` and export
         tablename = "dictionary" # input("- TABLE NAME\n> ")
         df = pd.read_sql_query(f"SELECT * FROM {tablename}", conn)
-        df.to_excel(outpath, index=False)
+        df.to_excel(f"exported/{dbname}.xlsx", index=False, engine='xlsxwriter')
 
     except sqlite3.Error as error:
-        print("    - ERROR :", error)
+        print("    [ ERR ]", error)
