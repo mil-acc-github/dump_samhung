@@ -2,9 +2,14 @@
 *.tar.gz
 *.idx
 *.sha
+
+# extracted Dictionary not included
 *.db
 *.csv
 *.xlsx
+
+# extraction script excluded temporarily
+*.ipynb
 
 
 # Byte-compiled / optimized / DLL files
